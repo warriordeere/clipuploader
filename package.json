@@ -1,6 +1,13 @@
 {
   "dependencies": {
-    "@googleapis/youtube": "^20.0.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^144.0.0",
+    "node-fetch": "^3.3.2",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "typescript": "^5.6.2"
   }
 }
