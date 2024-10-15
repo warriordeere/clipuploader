@@ -3,6 +3,13 @@
 # Clipuploader
  Clipuploader is a tool utilazing node.js and the official google api to upload clips/videos from any set file path to YouTube.
 
+# Features
+- CLI Tool
+- customizable via .env
+- delete file after successfull upload
+- set custom video description and title
+- and more...
+
 # Requirements
 - Node.js v21.1.0
 - a package manager of your choice (preferably npm)
@@ -12,7 +19,7 @@
  2. Download the repository and extract it somewhere
  3. Open the Commandline in the extracted folder
  4. Run `npm i`
- 5. Modify the `.env` file as you like 
+ 5. Modify the values of the entries in the `.env` file as you like 
 
 > ⚠️ **Important:** <br>
 > `CLIENT_ID` and `CLIENT_SECRET` are mandatory! To retrieve this OAuth values see this short [tutorial](#tutorial-setup-youtube-api).

@@ -1,5 +1,4 @@
-import fs from 'fs'
-import { readdir } from 'node:fs/promises'
+import * as fs from 'node:fs/promises'
 import os from 'os'
 import dotenv from 'dotenv';
 import { OAuth2Client } from 'google-auth-library';
@@ -8,8 +7,22 @@ import { stdin as input, stdout as output } from 'node:process';
 import { google } from "googleapis";
 import path from 'path';
 import { UploadPreferences } from './types/types';
+import { createReadStream, existsSync } from 'node:fs';
 
-dotenv.config({ path: `.env.${process.env.NODE_ENV || 'dev'}` });
+dotenv.config({ path: `.env${process.env.USE_DEV_ENV ? (null) : '.dev'}` });
+
+console.log(`.env${process.env.USE_DEV_ENV ? (null) : '.dev'}`);
+
+const md = {
+    "app": {
+        "author": "warriordeere",
+        "name": "clipuploader",
+        "version": 0.2,
+        "repository": "https://github.com/warriordeere/clipuploader"
+    }
+}
+
+console.log(`\x1b[35m[INFO] \x1b[0mStarting ${md.app.name} v${md.app.version} by ${md.app.author}`);
 
 const tokenStorage = `${process.env.TOKEN_STORAGE_FILE_NAME}.json`;
 
@@ -32,8 +45,8 @@ async function authClientAccess(): Promise<OAuth2Client> {
 
     const AuthClient = new OAuth2Client(clientId, clientSecret, redirect);
 
-    if (fs.existsSync(tokenStorage)) {
-        const storedToken = JSON.parse(fs.readFileSync(tokenStorage, 'utf-8'));
+    if (existsSync(tokenStorage)) {
+        const storedToken = JSON.parse(await fs.readFile(tokenStorage, 'utf-8'));
         AuthClient.setCredentials(storedToken);
     }
     else {
@@ -49,7 +62,7 @@ async function authClientAccess(): Promise<OAuth2Client> {
 
         AuthClient.setCredentials(tokens);
 
-        fs.writeFileSync(tokenStorage, JSON.stringify(tokens));
+        await fs.writeFile(tokenStorage, JSON.stringify(tokens));
 
         console.log('\x1b[35m[INFO] \x1b[0mToken successfully stored!');
     }
@@ -69,6 +82,19 @@ function userInput(task: string): Promise<string> {
     })
 }
 
+// adjusted from stackoverflow:
+function fileSizeString(by: number, dec: number = 2) {
+    if (!+by) return '0 Bytes'
+
+    const k = 1024
+    const dm = dec < 0 ? 0 : dec
+    const sz = ['Bytes', 'KiB', 'MiB', 'GiB']
+
+    const i = Math.floor(Math.log(by) / Math.log(k))
+
+    return `${parseFloat((by / Math.pow(k, i)).toFixed(dm))} ${sz[i]}`
+}
+
 async function upload(auth: OAuth2Client) {
     const ytServ = google.youtube({ version: 'v3', auth });
 
@@ -78,12 +104,11 @@ async function upload(auth: OAuth2Client) {
 
     const uploadDir = path.join(homeDir, process.env.UPLOAD_DIRECTORY_PATH);
 
-
     try {
-        const files = await readdir(uploadDir);
+        const files = await fs.readdir(uploadDir);
 
         if (!files || files.length < 1) {
-            console.error(`\x1b[31m\x1b[1m[ERROR]\x1b[0m\x1b[1m No file(s) to upload!\x1b[0m`);
+            return console.error(`\x1b[31m\x1b[1m[ERROR]\x1b[0m\x1b[1m No file(s) to upload!\x1b[0m`);
         }
 
         console.log(`\x1b[35m[INFO] \x1b[0m Found ${files.length} file(s). Starting to upload... \x1b[0m`);
@@ -92,6 +117,7 @@ async function upload(auth: OAuth2Client) {
             async (file) => {
 
                 const fp = path.join(uploadDir, file);
+                const fm = await fs.stat(fp);
 
                 console.log(`\x1b[35m[INFO] \x1b[0m Uploading file: ${fp} \x1b[0m`);
 
@@ -113,13 +139,29 @@ async function upload(auth: OAuth2Client) {
                     meta.parameters.notifySubscribers = process.env.VIDEO_NOTIFY_SUBSCRIBERS as unknown as boolean;
                 }
 
-                if (process.env.VIDEO_TITLE === 'default') {
+                if (!process.env.VIDEO_TITLE || process.env.VIDEO_TITLE === 'default') {
                     meta.snippet.title = file;
                 }
+                else {
+                    meta.snippet.title = process.env.VIDEO_TITLE;
+                }
 
-                if (process.env.VIDEO_DESCRIPTION) {
-                    meta.snippet.description =
-                        `Original file name: ${file}.\nAutomatically uploaded at ${new Date().toLocaleDateString('en-US', dateLocale)}\n\nThe tool (clipuploader v0.1) used to upload this video was created by warriordeere and is open-source. You can find it on GitHub: https://github.com/warriordeere/clipuploader`;
+                const date = new Date();
+                const local = date.toLocaleDateString('en-US', dateLocale);
+                const time = date.toLocaleTimeString();
+                const app = `${md.app.name} v${md.app.version}`;
+
+                const ddesc = {
+                    main: `Original file name: ${file}.\nFile Size: ${fileSizeString(fm.size)}\n`,
+                    dscl: `This file was uploaded automatically on ${local} at ${time}\n\n`,
+                    atr: `Uploadscript: ${app} from ${md.app.author} is open-source and on GitHub: ${md.app.repository}`
+                }
+
+                if (!process.env.VIDEO_DESCRIPTION || process.env.VIDEO_DESCRIPTION === 'default') {
+                    meta.snippet.description = ddesc.main + ddesc.dscl + ddesc.atr;
+                }
+                else {
+                    meta.snippet.description = process.env.VIDEO_DESCRIPTION + ddesc.dscl + ddesc.atr;
                 }
 
                 if (process.env.VIDEO_LICENSE) {
@@ -144,16 +186,28 @@ async function upload(auth: OAuth2Client) {
                         },
                     },
                     media: {
-                        body: fs.createReadStream(fp),
+                        body: createReadStream(fp),
                     },
                 })
                     .then(
                         (r) => {
+                            const video_link = `\x1b[1m\x1b[1m\u001b]8;;https://www.youtube.com/watch?v=${r.data.id}\u001b\\video\u001b]8;;\u001b\\\x1b[0m`;
+
                             console.log(`\x1b[35m[INFO] \x1b[0m Uploaded file: ${fp}`);
-                            console.log(`\x1b[32m[SUCCESS] \x1b[0m Video (${fp}) successfully published (https://www.youtube.com/watch?v=${r.data.id}) at ${new Date(r.data.snippet?.publishedAt ? (r.data.snippet?.publishedAt) : (0)).toLocaleDateString(undefined, dateLocale)} to Channel @${r.data.snippet?.channelTitle} (https://www.youtube.com/channel/${r.data.snippet?.channelId}).`);
+                            console.log(`\x1b[32m[SUCCESS] \x1b[0m Video (${fp}) successfully published the ${video_link} at ${new Date(r.data.snippet?.publishedAt ? (r.data.snippet?.publishedAt) : (0)).toLocaleDateString('en-US', dateLocale)} to Channel @${r.data.snippet?.channelTitle}.`);
+
+                            if (process.env.ACTION_AFTER_UPLOAD === 'delete') {
+                                fs.unlink(fp)
+                                    .then((r) => {
+                                        console.log(`\x1b[32m[SUCCESS]\x1b[0m Original file permanently deleted!`);
+                                    })
+                                    .catch((e) => {
+                                        return console.error(`\x1b[31m\x1b[1m[ERROR]\x1b[0m\x1b[1m ${e}\x1b[0m`);
+                                    });
+                            }
                         })
                     .catch((e) => {
-                        console.error(`\x1b[31m\x1b[1m[ERROR]\x1b[0m\x1b[1m ${e}\x1b[0m`);
+                        return console.error(`\x1b[31m\x1b[1m[ERROR]\x1b[0m\x1b[1m ${e}\x1b[0m`);
                     });
             }
         );
