@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "google-auth-library": "^9.14.1",
     "googleapis": "^144.0.0",
@@ -9,5 +10,9 @@
   "devDependencies": {
     "@types/node": "^22.7.5",
     "typescript": "^5.6.2"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=production ts-node script.ts",
+    "dev": "cross-env NODE_ENV=development ts-node script.ts"
   }
 }

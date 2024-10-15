@@ -1,5 +1,3 @@
-
-
 # Clipuploader
  Clipuploader is a tool utilazing node.js and the official google api to upload clips/videos from any set file path to YouTube.
 
@@ -11,8 +9,8 @@
 - and more...
 
 # Requirements
-- Node.js v21.1.0
-- a package manager of your choice (preferably npm)
+- Node.js v21.1.0 or higher
+- NPM 10.9.0 or higher
 
 # Setup And How To Use
  1. Install Node.js and npm ([Tutorial](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm))
@@ -20,11 +18,10 @@
  3. Open the Commandline in the extracted folder
  4. Run `npm i`
  5. Modify the values of the entries in the `.env` file as you like 
+ 6. Run `npm start` to start uploading the files from the specified folder
 
 > ⚠️ **Important:** <br>
 > `CLIENT_ID` and `CLIENT_SECRET` are mandatory! To retrieve this OAuth values see this short [tutorial](#tutorial-setup-youtube-api).
-
- 6. Run `npx ts-node script` to start uploading the files from the specified folder
 
 # Tutorial: Setup YouTube API
 1. Open the Google Cloud [website](https://console.cloud.google.com/).

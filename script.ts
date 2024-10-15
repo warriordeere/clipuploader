@@ -1,24 +1,27 @@
-import * as fs from 'node:fs/promises'
-import os from 'os'
 import dotenv from 'dotenv';
-import { OAuth2Client } from 'google-auth-library';
-import * as readline from "node:readline";
-import { stdin as input, stdout as output } from 'node:process';
 import { google } from "googleapis";
-import path from 'path';
-import { UploadPreferences } from './types/types';
+import { OAuth2Client } from 'google-auth-library';
+
+import os from 'node:os'
+import path from 'node:path';
+import * as fs from 'node:fs/promises'
+import * as readline from "node:readline";
 import { createReadStream, existsSync } from 'node:fs';
+import { stdin as input, stdout as output } from 'node:process';
 
-dotenv.config({ path: `.env${process.env.USE_DEV_ENV ? (null) : '.dev'}` });
+import { AppMetaData, UploadPreferences } from './types/types';
 
-console.log(`.env${process.env.USE_DEV_ENV ? (null) : '.dev'}`);
+const nodeEnv = process.env.NODE_ENV || 'production';
+const envPath = nodeEnv === 'development' ? '.env.dev' : '.env';
 
-const md = {
-    "app": {
-        "author": "warriordeere",
-        "name": "clipuploader",
-        "version": 0.2,
-        "repository": "https://github.com/warriordeere/clipuploader"
+dotenv.config({ path: envPath });
+
+const md: AppMetaData = {
+    app: {
+        author: "warriordeere",
+        name: "clipuploader",
+        version: '0.2.1',
+        repository: "https://github.com/warriordeere/clipuploader"
     }
 }
 

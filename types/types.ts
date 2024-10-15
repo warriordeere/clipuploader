@@ -11,3 +11,12 @@ export interface UploadPreferences {
         privacy: 'private' | 'unlisted'
     }
 }
+
+export interface AppMetaData {
+    app: {
+        author: string
+        name: string
+        version: `${number}.${number}.${number}`
+        repository: string
+    }
+}
